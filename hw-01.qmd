@@ -490,68 +490,8 @@ This was a surprisingly interesting exercise.
 
 ## 5 - Napoleon’s march.
 
-```{r}
-
-library(tidyverse)
-library(lubridate)
-library(ggrepel)
-library(maps)
-
-# 1) Load your data
-napoleon <- read_rds("data/napoleon.rds")
-cities  <- napoleon$cities
-troops  <- napoleon$troops
-temps   <- napoleon$temperatures %>% 
-             # just in case your dates weren’t already Date objects
-             mutate(date = as_date(date))  
-```
-
-```{r}
-# build the Minard plot, lowering the bottom ylim by 2° extra
-ggplot() +
-  # troop advance & retreat
-  geom_path(
-    data     = troops,
-    aes(x = long, y = lat, group = group,
-        color = direction, size = survivors),
-    lineend  = "round"
-  ) +
-  # city points & labels
-  geom_point(
-    data = cities,
-    aes(x = long, y = lat),
-    color = "#DC5B44", size = 1
-  ) +
-  geom_text_repel(
-    data   = cities,
-    aes(x = long, y = lat, label = city),
-    color  = "#DC5B44",
-    size   = 3
-  ) +
-  # temperature annotations just below the lowest city
-  geom_text(
-    data   = temps,
-    aes(x = long, y = min(cities$lat) - 1, label = temp),
-    color  = "#252523",
-    size   = 3,
-    hjust  = 0
-  ) +
-  # scales to mimic Minard’s widths & palette
-  scale_size_continuous(range = c(0.5, 15), guide = "none") +
-  scale_color_manual(values = c(
-    advancing  = "#DFC17E",
-    retreating = "#252523"
-  )) +
-  # expand the bottom of the panel by 2° so labels aren’t cut off
-  coord_quickmap(
-    xlim = c(min(troops$long) - 1, max(troops$long) + 1),
-    ylim = c(min(troops$lat)   - 3, max(troops$lat)   + 1)
-  ) +
-  theme_void() +
-  labs(x = NULL, y = NULL)
-```
-
-```{r}
+```{# This code is adapted from the "Exploring Minard’s 1812 plot with ggplot2" blog post by Andrew Heiss}
+{r}
 # ── packages ─────────────────────────────────────────────────────────────────
 library(tidyverse)
 library(readr)
@@ -559,7 +499,7 @@ library(ggrepel)
 library(cowplot)    # for theme_nothing()
 
 # ── 1) Load your Napoleon data ───────────────────────────────────────────────
-napoleon     <- read_rds("data/napoleon.rds")
+napoleon     <- read_rds("danapoleon.rds")
 troops       <- napoleon$troops
 cities       <- napoleon$cities
 temps.nice   <- napoleon$temperatures %>%
