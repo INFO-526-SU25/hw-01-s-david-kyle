@@ -403,15 +403,83 @@ ggplot(county_clean, aes(x = homeownership, y = poverty, color = metro)) +
 
 ```{r}
 # Load dataset
-credit <- read_csv("data/credit.csv")
+credit <- read_csv("data/credit.csv", show_col_types = FALSE)
 
-# Glimpse and summary
-glimpse(credit)
-summary(credit)
-
-# Check for missing values
-sapply(credit, function(x) sum(is.na(x)))
+ # The plot
+ggplot(credit, aes(x = income, y = balance, 
+                   color = student, shape = student)) +
+  geom_point(alpha = 0.6, size = 2) +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_grid(student ~ married, labeller = label_both) +
+  scale_color_manual(
+    values = c("No"  = "darkturquoise", 
+               "Yes" = "lightsalmon")  
+  ) +
+  # Add scaling formatting and breaks
+  scale_x_continuous(
+    labels = dollar_format(prefix = "$", suffix = "K"), 
+    breaks = seq(0, 200, 50)
+  ) +
+  scale_y_continuous(labels = dollar_format(prefix = "$")) +
+  # Labels
+  labs(
+    x     = "Income",
+    y     = "Credit card balance"
+  ) +
+  # Standard themeing
+  theme_minimal(base_size = 14) +
+  theme(
+    strip.background  = element_rect(fill = "grey90", color = NA),
+    legend.position   = "none"
+  )
 
 ```
+
+From the plots, income and credit-card balance are positively correlated. Students start with higher balances at lower incomes, which makes sense as they are not earning when they go to school and take on debt. I do not believe I can make a judgement comparing slopes as they seem close and with the limited amount of samples the sample regression may be far from the actual regression.
+
+### b.
+
+I think student would be a predictor for credit card balance. The intercept is clearly higher for students. I hold with my position above that there is not enough data for me to judge if married could be a predictor.
+
+### c.
+
+```{r}
+
+credit_u <- credit |> 
+  mutate(utilization = balance / limit)
+
+ # The plot
+ggplot(credit_u, aes(x = income, y = utilization, 
+                   color = student, shape = student)) +
+  geom_point(alpha = 0.6, size = 2) +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_grid(student ~ married, labeller = label_both) +
+  scale_color_manual(
+    values = c("No"  = "darkturquoise", 
+               "Yes" = "lightsalmon")  
+  ) +
+  # Add scaling formatting and breaks
+  scale_x_continuous(
+    labels = dollar_format(prefix = "$", suffix = "K"), 
+    breaks = seq(0, 200, 50)
+  ) +
+  scale_y_continuous(
+    labels = percent_format(accuracy = 1),
+    limits = c(0, NA)
+  ) +
+  # Labels
+  labs(
+    x = "Income",
+    y = "Credit utilization"
+  ) +
+  # Standard themeing
+  theme_minimal(base_size = 14) +
+  theme(
+    strip.background  = element_rect(fill = "grey90", color = NA),
+    legend.position   = "none"
+  )
+```
+
+### c.
 
 ## 5 - Napoleon’s march.
