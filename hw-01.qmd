@@ -1,6 +1,6 @@
 ---
 title: "HW 01"
-author: "INSERT YOUR NAME HERE"
+author: "S. David Kyle"
 format: 
   html:
     embed-resources: true
@@ -10,29 +10,408 @@ toc: true
 ## 0 - Setup
 
 ```{r setup}
+
 if (!require("pacman")) 
   install.packages("pacman")
 
 # use this line for installing/loading
-# pacman::p_load() 
+pacman::p_load(tidyverse, 
+               scales,
+               openintro) 
 
 devtools::install_github("tidyverse/dsbox")
 ```
 
 ## 1 - Road traffic accidents in Edinburgh
 
-```{r label-me-1}
+```{r}
+
+# Load dataset
+accidents <- read_csv("data/accidents.csv")
+
+# Prepare variables
+accidents <- accidents |>
+  mutate(
+    date = as.Date(date),
+    hour = hour(time) + minute(time) / 60,
+    weekday_name = weekdays(date),
+    day_type = if_else(
+      weekday_name == "Saturday" | weekday_name == "Sunday",
+      "Weekend",
+      "Weekday"
+    )
+  )
+
+# Plot using default density (area under curve = 1)
+ggplot(accidents, aes(x = hour, fill = severity)) +
+  geom_density(aes(group = severity), alpha = 0.6, position = "identity") +
+  facet_wrap(~day_type, ncol = 1) +
+  scale_fill_manual(
+    values = c("Fatal" = "#8c6bb1", "Serious" = "#66c2a5", "Slight" = "#ffd92f")
+  ) +
+  scale_x_continuous(
+    name = "Time of day",
+    limits = c(0, 24),
+    breaks = seq(0, 24, by = 4),
+    labels = sprintf("%02d:00", seq(0, 24, by = 4))
+  ) +
+  scale_y_continuous(
+    name = "Density",
+    labels = scientific
+  ) +
+  labs(
+    title = "Number of accidents throughout the day",
+    subtitle = "By day of week and severity",
+    fill = "Severity"
+  ) +
+  theme_minimal()
+
+
 
 ```
+
+```{r}
+# Count and print the number of fatal weekend accidents
+accidents |>
+  filter(severity == "Fatal", day_type == "Weekend") |>
+  nrow()
+```
+
+```{r}
+# Am I missing weekend fatalities
+table(accidents$severity, accidents$day_type)
+```
+
+### Interpretation
+
+We draw a density plot to normalize the data between weekday and weekend traffic, allowing for meaningful comparison despite differences in overall traffic volume.
+
+-   There are visible peaks around 16:00 in both plots, corresponding to the end of the workday when traffic tends to be heaviest.
+
+-   The weekday plot also shows a peak around 08:00, likely reflecting the morning commute.
+
+-   A small peak in fatal accidents around 11:00 on weekdays may be related to delivery vehicles or mid-morning traffic patterns, though this would need further investigation to confirm.
+
+-   There are no fatal accidents recorded on weekends in this dataset. This could be due to reduced traffic volume, safer driving conditions, or simply random variation in a single year of data. A reporting issue is also possible, though the rest of the dataset appears complete.
 
 ## 2 - NYC marathon winners
 
-```{r label-me-2}
+### a.
+
+```{r}
+# Drop all non-finite times
+nyc_clean <- nyc_marathon |>
+  filter(is.finite(time))
+
+# Histogram
+nyc_clean |>
+  ggplot(aes(x = time)) +
+  geom_histogram(bins = 20, color="darkblue", fill="lightblue") +
+  labs(
+    title = "Histogram of NYC Marathon Winning Times",
+    subtitle = "1970 to 2000",
+    caption = "Source: openintro",
+    x     = "Winning time (hours)",
+    y     = "Count"
+  ) +
+  theme_minimal()
+
+# Box plot
+nyc_clean |>
+  ggplot(aes(y = time)) +
+  geom_boxplot(color="red", fill="orange", alpha=0.2) +
+  labs(
+    title = "Box Plot of NYC Marathon Winning Times",
+    subtitle = "1970 to 2000",
+    caption = "Source: openintro",,
+    y     = "Winning time (hours)"
+  ) +
+  theme_minimal()
 
 ```
 
+The box plot gives you the exact quartiles, whisker-range and marks outliers, the histogram does not.
+
+### b.
+
+```{r}
+
+# Side-by-side box plots
+nyc_clean |>
+  ggplot(aes(
+    x    = division,
+    y    = time_hrs,
+    fill = division
+  )) +
+  geom_boxplot(width = 0.6) +
+  scale_fill_manual(values = c(
+      Men   = "lightblue", Women = "orange" 
+    )) +
+  labs(
+    title = "NYC Marathon Winning Times by Division",
+    subtitle = "1970 to 2000",
+    caption = "Source: openintro",
+    x     = "Division",
+    y     = "Time (hours)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+```
+
+Men’s times have a faster median with fewer extreme values, women’s times have a slower median, with more variance.
+
+### c.
+
+```{r}
+nyc_clean |>
+  ggplot(aes(
+    x    = division,
+    y    = time_hrs,
+    fill = division
+  )) +
+  geom_boxplot(
+    width = 0.6,
+    fill  = NA,       # no fill color
+    color = "black"   # box outlines in black
+  ) +
+  labs(
+    title = "NYC Marathon Winning Times by Division",
+    subtitle = "1970 to 2000",
+    caption = "Source: openintro",
+    x     = "Division",
+    y     = "Time (hours)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+I removed box colors as it could be seen as duplicate indication on the x-axis and does remove ink in a sense. It is all I could figure to remove, there just isn't much on the chart. I believe my chart is an incorrect chart and colors should be used.
+
+It is possible that in some charts a legend was presented initially. This should be removed as it is unnecessary.
+
+### d.
+
+```{r}
+nyc_clean |>
+  ggplot(aes(
+      x     = year,
+      y     = time_hrs,
+      color = division,
+      shape = division,
+      group = division       
+    )) +
+    geom_line(size = 0.8) +  
+    geom_point(size = 2) +
+    scale_color_manual(
+      values = c(
+        Men   = "lightblue",
+        Women = "orange"
+      )
+    ) +
+    scale_shape_manual(
+      values = c(
+        Men   = 16,  # circle
+        Women = 17   # triangle
+      )
+    ) +
+    labs(
+      title = "NYC Marathon Winning Times by Division over Years",
+      x     = "Year",
+      y     = "Time (hours)",
+      color = "Division",
+      shape = "Division"
+    ) +
+    theme_minimal() + 
+    theme(
+      legend.position = c(0.9, 0.9),
+      legend.box.background = element_rect(fill = "white", color = "grey")
+    )
+
+
+```
+
+Trends over time are shown in this graph and not in the others. The times for both divisions improved at first rapidly then over time steadily. There is an increase in times for 2020 very likely due to COVID.
+
 ## 3 - US counties
 
+### a.
+
+```{r}
+# First, clean the data
+county_clean <-
+  county %>%
+  filter(
+    !is.na(pop2017),
+    !is.na(median_edu)
+  )
+```
+
+```{r}
+# These are entirely different plots
+ggplot(county_clean) +
+  geom_point(aes(x = median_edu, y = median_hh_income)) +
+  geom_boxplot(aes(x = smoking_ban,  y = pop2017))
+```
+
+This plot doesn't work at all. Two different plots on the same axis in this case does not convey much if any meaningful information.
+
+### b.
+
+```{r}
+# Cleaning data on the fly and faceting on median_edu
+ggplot(county %>% filter(!is.na(median_edu))) + 
+  geom_point(aes(x = homeownership, y = poverty)) + 
+  facet_grid(median_edu ~ .)
+```
+
+```{r}
+ggplot(county %>% filter(!is.na(median_edu))) + 
+  geom_point(aes(x = homeownership, y = poverty)) + 
+  facet_grid(. ~ median_edu)
+```
+
+I believe the second plot is easier to identify the relationship to poverty across the groups because there is a single y-scale that can be easily looked at once and compared across those groups. I guess faceting should be done so that the "relationship" property has a single scale. For example, if the question was home ownership, rows would be appropriate.
+
+### c.
+
+```{r}
+# Sctter of poverty vs. home ownership
+ggplot(county_clean, aes(x = homeownership, y = poverty)) +
+  geom_point() +
+  labs(
+      title = "Plot A"
+  )
+```
+
+```{r}
+# Add an overall smooth
+ggplot(county_clean, aes(x = homeownership, y = poverty)) +
+  geom_point() +
+  geom_smooth(se = FALSE, color = "blue") +
+  labs(
+    title = "Plot B"
+  )
+```
+
+```{r}
+# Scatter plus smoothes for metro
+ggplot(county_clean, aes(x = homeownership, y = poverty)) +
+  geom_point() +
+  geom_smooth(aes(color = metro), se = FALSE) +
+  scale_color_manual(values = c(no = "green", yes = "green")) +
+  theme(legend.position = "none") + # no legend
+  labs(
+    title = "Plot C"
+  )
+```
+
+```{r}
+# Scatter plus smoothes for metro. Smoothes are under the scatter
+ggplot(county_clean, aes(x = homeownership, y = poverty)) +
+  # Draw smooths first
+  geom_smooth(
+    aes(color = metro),
+    se = FALSE
+  ) +
+  # Draw points on top
+  geom_point() +
+  scale_color_manual(
+    values = c(no = "blue", yes = "blue")
+  ) +
+  theme(legend.position = "none") +
+  labs(
+    title = "Plot D"
+  )
+```
+
+```{r}
+# Scatter with colors by metro. Style smoothes by metro
+ggplot(county_clean, aes(x = homeownership, y = poverty)) +
+  # Points coloured by metro
+  geom_point(aes(color = metro)) +
+  # Smoothes all blue, with line type by metro
+  geom_smooth(aes(linetype = metro),
+              color = "blue",
+              se     = FALSE) +
+  scale_color_manual(values = c(
+    no  = "lightsalmon",
+    yes = "darkturquoise"
+  )) +
+  scale_linetype_manual(values = c(
+    no  = "solid",
+    yes = "dashed"
+  )) +
+  labs(
+    title = "Plot E"
+  )
+```
+
+```{r}
+# Scatter with colors by metro. Style smoothes by color by metro
+ggplot(county_clean, aes(x = homeownership, y = poverty)) +
+  geom_point(aes(color = metro)) +
+  geom_smooth(aes(color = metro), se = FALSE) +
+  scale_color_manual(values = c(
+    no  = "lightsalmon",
+    yes = "darkturquoise"
+  )) +
+  labs(
+    title = "Plot F"
+  )
+```
+
+```{r}
+# Scatter with colors by metro. Single smooth
+# Bringing it back
+ggplot(county_clean, aes(x = homeownership, y = poverty)) +
+  geom_point(aes(color = metro)) +
+  geom_smooth(aes(group = 1), se = FALSE, color = "blue") +
+  scale_color_manual(values = c(
+    no  = "lightsalmon",
+    yes = "darkturquoise"
+  )) +
+  labs(
+    title = "Plot G"
+  )
+```
+
+```{r}
+# Scatter with colors by metro
+ggplot(county_clean, aes(x = homeownership, y = poverty, color = metro)) +
+  geom_point() +
+  scale_color_manual(values = c(
+    no  = "lightsalmon",
+    yes = "darkturquoise"
+  )) +
+  labs(
+    title = "Plot H"
+  )
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
 ## 4 - Rental apartments in SF
+
+### a.
+
+```{r}
+# Load dataset
+credit <- read_csv("data/credit.csv")
+
+# Glimpse and summary
+glimpse(credit)
+summary(credit)
+
+# Check for missing values
+sapply(credit, function(x) sum(is.na(x)))
+
+```
 
 ## 5 - Napoleon’s march.
