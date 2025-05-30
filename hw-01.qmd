@@ -482,4 +482,79 @@ ggplot(credit_u, aes(x = income, y = utilization,
 
 ### c.
 
+Compared to the first graph the utilization slope flips for students even though we know credit balance increases. This suggests students have more credit than non-students–I believe this is misleading and actually untrue.
+
+My guess is to what is actually happening is that utilization for students and non-students actually converges to a very similar number at higher incomes. The graph is skewed significantly by the high utilization at low incomes for students. This can be seen with married students as they take on less debt at lower incomes. If just the high end of income is examined this is casually reinforced. More data would really be helpful.
+
+This was a surprisingly interesting exercise.
+
 ## 5 - Napoleon’s march.
+
+```{r}
+
+library(tidyverse)
+library(lubridate)
+library(ggrepel)
+library(maps)
+
+# 1) Load your data
+napoleon <- read_rds("data/napoleon.rds")
+cities  <- napoleon$cities
+troops  <- napoleon$troops
+temps   <- napoleon$temperatures %>% 
+             # just in case your dates weren’t already Date objects
+             mutate(date = as_date(date))  
+```
+
+```{r}
+ggplot() +
+  # Troop paths
+  geom_path(
+    data     = troops,
+    aes(x = long, y = lat, group = group,
+        color = direction, size = survivors),
+    lineend  = "round"
+  ) +
+  # City points & labels
+  geom_point(
+    data = cities,
+    aes(x = long, y = lat),
+    color = "#DC5B44", size = 1
+  ) +
+  geom_text_repel(
+    data   = cities,
+    aes(x = long, y = lat, label = city),
+    color  = "#DC5B44",
+    # family = "sans",      # optional explicit fallback
+    size   = 3
+  ) +
+  # Temperature annotations
+  geom_text(
+    data   = temps,
+    aes(x = long, y = min(cities$lat) - 1, label = temp),
+    color  = "#252523",
+    size   = 3,
+    hjust  = 0
+  ) +
+  # Scales & theme
+  scale_size_continuous(range = c(0.5, 15), guide = "none") +
+  scale_color_manual(values = c(
+    advancing  = "#DFC17E",
+    retreating = "#252523"
+  )) +
+  coord_quickmap(
+    xlim = c(min(troops$long) - 1, max(troops$long) + 1),
+    ylim = c(min(troops$lat)  - 1, max(troops$lat)  + 1)
+  ) +
+  theme_void() +
+  labs(x = NULL, y = NULL)
+```
+
+Sources:\
+Napoleon's Moscow campaign: as told by Charles Minard's chart\
+<https://www.youtube.com/watch?v=HrEuJO3wz3k&ab_channel=AndyCotgreave>
+
+Exploring Minard’s 1812 plot with ggplot2\
+<https://www.andrewheiss.com/blog/2017/08/10/exploring-minards-1812-plot-with-ggplot2/>\
+<https://github.com/andrewheiss/fancy-minard>\
+\
