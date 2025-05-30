@@ -17,7 +17,10 @@ if (!require("pacman"))
 # use this line for installing/loading
 pacman::p_load(tidyverse, 
                scales,
-               openintro) 
+               openintro,
+               cowplot,
+               ggrepel,
+               readr) 
 
 devtools::install_github("tidyverse/dsbox")
 ```
@@ -389,14 +392,6 @@ ggplot(county_clean, aes(x = homeownership, y = poverty, color = metro)) +
   )
 ```
 
-```{r}
-
-```
-
-```{r}
-
-```
-
 ## 4 - Rental apartments in SF
 
 ### a.
@@ -480,7 +475,7 @@ ggplot(credit_u, aes(x = income, y = utilization,
   )
 ```
 
-### c.
+### d.
 
 Compared to the first graph the utilization slope flips for students even though we know credit balance increases. This suggests students have more credit than non-students–I believe this is misleading and actually untrue.
 
@@ -490,22 +485,17 @@ This was a surprisingly interesting exercise.
 
 ## 5 - Napoleon’s march.
 
-```{# This code is adapted from the "Exploring Minard’s 1812 plot with ggplot2" blog post by Andrew Heiss}
-{r}
-# ── packages ─────────────────────────────────────────────────────────────────
-library(tidyverse)
-library(readr)
-library(ggrepel)
-library(cowplot)    # for theme_nothing()
+```{r}
+# This code is adapted from the "Exploring Minard’s 1812 plot with ggplot2" blog post by Andrew Heiss
 
-# ── 1) Load your Napoleon data ───────────────────────────────────────────────
-napoleon     <- read_rds("danapoleon.rds")
+# Load data
+napoleon     <- read_rds("data/napoleon.rds")
 troops       <- napoleon$troops
 cities       <- napoleon$cities
 temps.nice   <- napoleon$temperatures %>%
   mutate(nice.label = paste0(temp, "°C"))
 
-# ── 2) March map panel ──────────────────────────────────────────────────────
+# March map panel
 march.1812.plot.simple <- ggplot() +
   geom_path(
     data     = troops,
@@ -531,7 +521,7 @@ march.1812.plot.simple <- ggplot() +
   ) +
   theme_nothing()
 
-# ── 3) Temperature “timeline” panel ──────────────────────────────────────────
+# Temperature “timeline” panel
 temps.1812.plot <- ggplot(data = temps.nice, aes(x = long, y = temp)) +
   geom_line(color = "#252523") +
   geom_label(
@@ -558,7 +548,7 @@ temps.1812.plot <- ggplot(data = temps.nice, aes(x = long, y = temp)) +
     legend.position    = "none"
   )
 
-# ── 4) Stack them & set relative heights ────────────────────────────────────
+# Stack them & set relative heights 
 both.1812.plot.simple <- rbind(
   ggplotGrob(march.1812.plot.simple),
   ggplotGrob(temps.1812.plot)
@@ -570,7 +560,7 @@ panels <- both.1812.plot.simple$layout$t[
 ]
 both.1812.plot.simple$heights[panels] <- unit(c(3, 1), "null")
 
-# ── 5) Draw! ─────────────────────────────────────────────────────────────────
+# Draw
 grid::grid.newpage()
 grid::grid.draw(both.1812.plot.simple)
 
@@ -578,19 +568,34 @@ grid::grid.draw(both.1812.plot.simple)
 
 Sources:\
 Google\
+-General searches for coding issues finding Minard's plot in ggplot2\
 <https://www.google.com/>\
 \
 Napoleon's Moscow campaign: as told by Charles Minard's chart\
+-Understanding Minard's plot\
 <https://www.youtube.com/watch?v=HrEuJO3wz3k&ab_channel=AndyCotgreave>\
 \
 ChatGPT\
+-Explanation of exceptions during coding, queries about how certain code works \
 <https://chatgpt.com/>
 
-Exploring Minard’s 1812 plot with ggplot2\
+Exploring Minard’s 1812 plot with ggplot2 by Andrew Wheiss\
+-Source of the code concepts\
 <https://www.andrewheiss.com/blog/2017/08/10/exploring-minards-1812-plot-with-ggplot2/>\
 <https://github.com/andrewheiss/fancy-minard>\
 \
 lecture9_nov12-2018\
+-Additional exploration of the above blog post\
 <https://rpubs.com/maypowerss/ggplot2>\
+\
+A Layered Grammar of Graphics by Hadley Wickham\
+-Introduction to ggplot2 with a simple discussion of Minard's graphic\
+<https://vita.had.co.nz/papers/layered-grammar.pdf>
+
+Data is first loaded into dataframes and temperatures are mutated into a more readable format like "31°C." The graph consists of two panels a "March Map Panel" and a "Temperature Timeline Panel." The "March Map Panel" is a layered ggplot. It creates a path for the troops with size representing survivors, it draws points and labels for cities, controls the survivor line thickness, and themes the plot. "Temperature Timeline Plot" is a simple line graph with labels for temperature over time. The plots are stacked and drawn.
+
+All things considered, it ends up being less complicated that initially expected.
+
+\
 \
 \
