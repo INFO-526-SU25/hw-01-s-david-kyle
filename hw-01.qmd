@@ -214,8 +214,8 @@ nyc_clean |>
     ) +
     scale_shape_manual(
       values = c(
-        Men   = 16,  # circle
-        Women = 17   # triangle
+        Men   = 16,
+        Women = 17 
       )
     ) +
     labs(
@@ -596,6 +596,88 @@ Data is first loaded into dataframes and temperatures are mutated into a more re
 
 All things considered, it ends up being less complicated that initially expected.
 
+```{r}
+# This code is adapted from the "Exploring Minard’s 1812 plot with ggplot2" blog post by Andrew Heiss
+
+# Load data
+napoleon     <- read_rds("data/napoleon.rds")
+troops       <- napoleon$troops
+cities       <- napoleon$cities
+temps.nice   <- napoleon$temperatures %>%
+  mutate(nice.label = paste0(temp, "°C"))
+
+# March map panel
+march.1812.plot.simple <- ggplot() +
+  geom_path(
+    data     = troops,
+    aes(x = long, y = lat, group = group,
+        color = direction, size = survivors),
+    lineend  = "round"
+  ) +
+  geom_point(
+    data  = cities,
+    aes(x = long, y = lat),
+    color = "#DC5B44"
+  ) +
+  geom_text_repel(
+    data  = cities,
+    aes(x = long, y = lat, label = city),
+    color = "#DC5B44",
+    size  = 3
+  ) +
+  scale_size_continuous(range = c(0.5, 10), guide = "none") +
+  scale_colour_manual(
+    values = c(advancing = "#DFC17E", retreating = "#252523"),
+    guide  = "none"
+  ) +
+  theme_nothing()
+
+# Temperature “timeline” panel
+temps.1812.plot <- ggplot(data = temps.nice, aes(x = long, y = temp)) +
+  geom_line(color = "#252523") +
+  geom_label(
+    aes(label = nice.label),
+    size          = 2.5,
+    fill          = "white",
+    label.padding = unit(0.1, "lines"),
+    show.legend   = FALSE
+  ) +
+  labs(x = NULL, y = NULL, caption = "Return Trip Temperatures") +
+  scale_x_continuous(
+    limits = ggplot_build(march.1812.plot.simple)$layout$panel_ranges[[1]]$x.range
+  ) +
+  scale_y_continuous(position = "right") +
+  coord_cartesian(ylim = c(-35, 5)) +
+  theme_bw() +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    axis.text.x        = element_blank(),
+    axis.ticks         = element_blank(),
+    panel.border       = element_blank(),
+    legend.position    = "none",
+    plot.caption       = element_text(hjust = 0.5, size = 10, margin = margin(t = 5))
+  )
+
+# Stack them & set relative heights 
+both.1812.plot.simple <- rbind(
+  ggplotGrob(march.1812.plot.simple),
+  ggplotGrob(temps.1812.plot)
+)
+
+# find panel rows and assign a 3:1 height ratio
+panels <- both.1812.plot.simple$layout$t[
+  grep("panel", both.1812.plot.simple$layout$name)
+]
+both.1812.plot.simple$heights[panels] <- unit(c(3, 1), "null")
+
+# Draw
+grid::grid.newpage()
+grid::grid.draw(both.1812.plot.simple)
+
+```
+
 \
-\
+I removed the "° Celsius" from the y-label as the temperatures are labeled. I also wanted to indicate the temps are for the return trip. Minard does this every eloquently using lines from the temperature plot to the returning troo map. I am not like Minard but thought the information was important.\
 \
