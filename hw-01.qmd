@@ -507,15 +507,16 @@ temps   <- napoleon$temperatures %>%
 ```
 
 ```{r}
+# build the Minard plot, lowering the bottom ylim by 2° extra
 ggplot() +
-  # Troop paths
+  # troop advance & retreat
   geom_path(
     data     = troops,
     aes(x = long, y = lat, group = group,
         color = direction, size = survivors),
     lineend  = "round"
   ) +
-  # City points & labels
+  # city points & labels
   geom_point(
     data = cities,
     aes(x = long, y = lat),
@@ -525,10 +526,9 @@ ggplot() +
     data   = cities,
     aes(x = long, y = lat, label = city),
     color  = "#DC5B44",
-    # family = "sans",      # optional explicit fallback
     size   = 3
   ) +
-  # Temperature annotations
+  # temperature annotations just below the lowest city
   geom_text(
     data   = temps,
     aes(x = long, y = min(cities$lat) - 1, label = temp),
@@ -536,25 +536,121 @@ ggplot() +
     size   = 3,
     hjust  = 0
   ) +
-  # Scales & theme
+  # scales to mimic Minard’s widths & palette
   scale_size_continuous(range = c(0.5, 15), guide = "none") +
   scale_color_manual(values = c(
     advancing  = "#DFC17E",
     retreating = "#252523"
   )) +
+  # expand the bottom of the panel by 2° so labels aren’t cut off
   coord_quickmap(
     xlim = c(min(troops$long) - 1, max(troops$long) + 1),
-    ylim = c(min(troops$lat)  - 1, max(troops$lat)  + 1)
+    ylim = c(min(troops$lat)   - 3, max(troops$lat)   + 1)
   ) +
   theme_void() +
   labs(x = NULL, y = NULL)
 ```
 
+```{r}
+# ── packages ─────────────────────────────────────────────────────────────────
+library(tidyverse)
+library(readr)
+library(ggrepel)
+library(cowplot)    # for theme_nothing()
+
+# ── 1) Load your Napoleon data ───────────────────────────────────────────────
+napoleon     <- read_rds("data/napoleon.rds")
+troops       <- napoleon$troops
+cities       <- napoleon$cities
+temps.nice   <- napoleon$temperatures %>%
+  mutate(nice.label = paste0(temp, "°C"))
+
+# ── 2) March map panel ──────────────────────────────────────────────────────
+march.1812.plot.simple <- ggplot() +
+  geom_path(
+    data     = troops,
+    aes(x = long, y = lat, group = group,
+        color = direction, size = survivors),
+    lineend  = "round"
+  ) +
+  geom_point(
+    data  = cities,
+    aes(x = long, y = lat),
+    color = "#DC5B44"
+  ) +
+  geom_text_repel(
+    data  = cities,
+    aes(x = long, y = lat, label = city),
+    color = "#DC5B44",
+    size  = 3
+  ) +
+  scale_size_continuous(range = c(0.5, 10), guide = "none") +
+  scale_colour_manual(
+    values = c(advancing = "#DFC17E", retreating = "#252523"),
+    guide  = "none"
+  ) +
+  theme_nothing()
+
+# ── 3) Temperature “timeline” panel ──────────────────────────────────────────
+temps.1812.plot <- ggplot(data = temps.nice, aes(x = long, y = temp)) +
+  geom_line(color = "#252523") +
+  geom_label(
+    aes(label = nice.label),
+    size          = 2.5,
+    fill          = "white",
+    label.padding = unit(0.1, "lines"),
+    show.legend   = FALSE
+  ) +
+  labs(x = NULL, y = "° Celsius") +
+  scale_x_continuous(
+    limits = ggplot_build(march.1812.plot.simple)$layout$panel_ranges[[1]]$x.range
+  ) +
+  scale_y_continuous(position = "right") +
+  coord_cartesian(ylim = c(-35, 5)) +
+  theme_bw() +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    axis.text.x        = element_blank(),
+    axis.ticks         = element_blank(),
+    panel.border       = element_blank(),
+    legend.position    = "none"
+  )
+
+# ── 4) Stack them & set relative heights ────────────────────────────────────
+both.1812.plot.simple <- rbind(
+  ggplotGrob(march.1812.plot.simple),
+  ggplotGrob(temps.1812.plot)
+)
+
+# find panel rows and assign a 3:1 height ratio
+panels <- both.1812.plot.simple$layout$t[
+  grep("panel", both.1812.plot.simple$layout$name)
+]
+both.1812.plot.simple$heights[panels] <- unit(c(3, 1), "null")
+
+# ── 5) Draw! ─────────────────────────────────────────────────────────────────
+grid::grid.newpage()
+grid::grid.draw(both.1812.plot.simple)
+
+```
+
 Sources:\
+Google\
+<https://www.google.com/>\
+\
 Napoleon's Moscow campaign: as told by Charles Minard's chart\
-<https://www.youtube.com/watch?v=HrEuJO3wz3k&ab_channel=AndyCotgreave>
+<https://www.youtube.com/watch?v=HrEuJO3wz3k&ab_channel=AndyCotgreave>\
+\
+ChatGPT\
+<https://chatgpt.com/>
 
 Exploring Minard’s 1812 plot with ggplot2\
 <https://www.andrewheiss.com/blog/2017/08/10/exploring-minards-1812-plot-with-ggplot2/>\
 <https://github.com/andrewheiss/fancy-minard>\
+\
+lecture9_nov12-2018\
+<https://rpubs.com/maypowerss/ggplot2>\
+\
 \
