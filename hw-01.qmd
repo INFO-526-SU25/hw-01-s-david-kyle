@@ -22,7 +22,9 @@ pacman::p_load(tidyverse,
                openintro,
                cowplot,
                ggrepel,
-               readr) 
+               readr,
+               grid,
+               gridExtra) 
 
 devtools::install_github("tidyverse/dsbox")
 ```
@@ -674,12 +676,41 @@ panels <- both.1812.plot.simple$layout$t[
 ]
 both.1812.plot.simple$heights[panels] <- unit(c(3, 1), "null")
 
-# Draw
-grid::grid.newpage()
-grid::grid.draw(both.1812.plot.simple)
+# Create title and caption grobs
+title_grob <- textGrob(
+  "Recreating Charles Joseph Minard’s Famous Plot",
+    x    = unit(0, "npc"),
+    hjust = 0,
+    gp = gpar(fontsize = 13, fontface = "bold")
+)
+
+caption_grob <- textGrob(
+  "Source: \"Exploring Minard’s 1812 plot with ggplot2\" blog by Andrew Heiss",
+  x   = unit(1, "npc"),
+  hjust = 1,
+  gp = gpar(fontsize = 9)
+)
+
+# Arrange title, combined plot, and caption vertically 
+final_plot_with_caption <- arrangeGrob(
+  title_grob,
+  both.1812.plot.simple,
+  caption_grob,
+  ncol    = 1,
+  heights = unit.c(
+    unit(0.5, "in"),    # space for the title
+    unit(1,    "null"), # the stacked map + timeline
+    unit(0.4, "in")     # space for the caption
+  )
+)
+
+# Render
+grid.newpage()
+grid.draw(final_plot_with_caption)
+
 
 ```
 
 \
-I removed the "° Celsius" from the y-label as the temperatures are labeled. I also wanted to indicate the temps are for the return trip. Minard does this very eloquently using lines from the temperature plot to the returning troo map. I am not like Minard but thought the information was important.\
+I removed the "° Celsius" from the y-label as the temperatures are labeled. I also wanted to indicate the temps are for the return trip. Minard does this very eloquently using lines from the temperature plot to the returning troo map. I am not like Minard but thought the information was important. I also added a title and a caption.\
 \
