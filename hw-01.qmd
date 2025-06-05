@@ -9,7 +9,7 @@ toc: true
 
 ## 0 - Setup[^1]
 
-[^1]: AI was used for assistance in this project. It was used for code clarification, exception explanations, and discussions on how ggplot2, dplyr, and other packages operate. I used code snippets only when I was unable to resolve an issue independently. All text is authored exclusive
+[^1]: AI was used for assistance in this project. It was used for code clarification, exception explanations, and discussions on how ggplot2, dplyr, and other packages operate. I used code snippets only when I was unable to resolve an issue independently. All text is authored exclusively by me
 
 ```{r setup}
 
@@ -578,7 +578,7 @@ Napoleon's Moscow campaign: as told by Charles Minard's chart\
 <https://www.youtube.com/watch?v=HrEuJO3wz3k&ab_channel=AndyCotgreave>\
 \
 ChatGPT\
--Explanation of exceptions during coding, queries about how certain code works \
+-Explanation of exceptions during coding, queries about how certain code works\
 <https://chatgpt.com/>
 
 Exploring Minard’s 1812 plot with ggplot2 by Andrew Wheiss\
@@ -681,5 +681,5 @@ grid::grid.draw(both.1812.plot.simple)
 ```
 
 \
-I removed the "° Celsius" from the y-label as the temperatures are labeled. I also wanted to indicate the temps are for the return trip. Minard does this every eloquently using lines from the temperature plot to the returning troo map. I am not like Minard but thought the information was important.\
+I removed the "° Celsius" from the y-label as the temperatures are labeled. I also wanted to indicate the temps are for the return trip. Minard does this very eloquently using lines from the temperature plot to the returning troo map. I am not like Minard but thought the information was important.\
 \
